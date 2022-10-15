@@ -59,12 +59,6 @@ void Mode_Switch(void)
 
 void Mode_CheckSwitching(void)
 {
-//  #ifndef SERIAL_ALWAYS_ON
-  // IDEALLY I would like to be able to swap even when the TFT is in printing mode
-  // but before I can allow that I need a way to make sure that we swap back into
-  // the right mode (and correct screen) and I really want a reliable way to DETECT
-  // that the TFT should be in printing mode even when the print was started externally.
-
   // we must always call Touch_Enc_ReadPen() and LCD_Enc_ReadBtn() first just to always update their internal timers
   // when an encoder/touch button is pressed or released (avoiding the Mode menu is displayed by mistake when aborting
   // a print in Marlin mode with infoSettings.serial_always_on enabled)
@@ -79,12 +73,12 @@ void Mode_CheckSwitching(void)
   if (infoSettings.mode >= MODE_COUNT)  // if blocked mode, then exit
     return;
 
-  if (isPrinting() || infoHost.printing || modeSwitching)
+  // do not change mode if printing from any source or is already waiting mode selection
+  if (isPrinting() || isHostPrinting() || modeSwitching)
     return;
 
   if (MENU_IS(menuMode))
     return;
-//  #endif
 
   if (btnPressed)
     OPEN_MENU(menuMode);

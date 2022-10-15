@@ -18,10 +18,13 @@ const LABEL parameterTypes[PARAMETERS_COUNT] = {
   LABEL_FWRECOVER,
   LABEL_RETRACT_AUTO,
   LABEL_HOTEND_OFFSET,
+  LABEL_HOTEND_PID,
+  LABEL_BED_PID,
   LABEL_ABL,
   LABEL_STEALTH_CHOP,
   LABEL_DELTA_CONFIGURATION,
   LABEL_DELTA_TOWER_ANGLE,
+  LABEL_DELTA_DIAGONAL_ROD,
   LABEL_DELTA_ENDSTOP,
   LABEL_PROBE_OFFSET,
   LABEL_LIN_ADVANCE,
@@ -73,6 +76,14 @@ void loadElements(LISTITEM * parameterMainItem, uint16_t index, uint8_t itemPos)
           parameterMainItem->titlelabel = junctionDeviationDisplayID[elementIndex];
           break;
 
+        case P_HOTEND_PID:
+          parameterMainItem->titlelabel.address = hotendPidDisplayID[elementIndex];
+          break;
+
+        case P_BED_PID:
+          parameterMainItem->titlelabel.address = bedPidDisplayID[elementIndex];
+          break;
+
         case P_FWRETRACT:
           parameterMainItem->titlelabel = retractDisplayID[elementIndex];
           break;
@@ -82,7 +93,7 @@ void loadElements(LISTITEM * parameterMainItem, uint16_t index, uint8_t itemPos)
           break;
 
         case P_AUTO_RETRACT:
-          parameterMainItem->titlelabel = autoRetractDisplayID[elementIndex];
+          parameterMainItem->titlelabel.address = autoRetractDisplayID[elementIndex];
           break;
 
         case P_ABL_STATE:
@@ -99,6 +110,10 @@ void loadElements(LISTITEM * parameterMainItem, uint16_t index, uint8_t itemPos)
 
         case P_DELTA_TOWER_ANGLE:
           parameterMainItem->titlelabel.address = deltaTowerAngleDisplayID[elementIndex];
+          break;
+
+        case P_DELTA_DIAGONAL_ROD:
+          parameterMainItem->titlelabel.address = deltaDiagonalRodDisplayID[elementIndex];
           break;
 
         case P_DELTA_ENDSTOP:
@@ -251,15 +266,16 @@ void menuParameterSettings(void)
       case KEY_BACK:
         if (parametersChanged && infoMachineSettings.EEPROM == 1)
         {
-          setDialogText(title.index, LABEL_EEPROM_SAVE_INFO, LABEL_CONFIRM, LABEL_CANCEL);
-          showDialog(DIALOG_TYPE_QUESTION, saveEepromSettings, NULL, NULL);
+          popupDialog(DIALOG_TYPE_QUESTION, title.index, LABEL_EEPROM_SAVE_INFO, LABEL_CONFIRM, LABEL_CANCEL, saveEepromSettings, NULL, NULL);
+
           parametersChanged = false;
         }
         else
         {
           psCurPage = 0;
-          CLOSE_MENU();
         }
+
+        CLOSE_MENU();
         break;
 
       default:
@@ -280,21 +296,19 @@ void menuParameterSettings(void)
           uint8_t curIndex_e = (curIndex - enabledParameterCount);
           if (curIndex_e == P_SAVE_SETTINGS)
           {
-            setDialogText(title.index, LABEL_EEPROM_SAVE_INFO, LABEL_CONFIRM, LABEL_CANCEL);
-            showDialog(DIALOG_TYPE_ALERT, saveEepromSettings, NULL, NULL);
+            popupDialog(DIALOG_TYPE_ALERT, title.index, LABEL_EEPROM_SAVE_INFO, LABEL_CONFIRM, LABEL_CANCEL, saveEepromSettings, NULL, NULL);
+
             parametersChanged = false;
             break;
           }
           else if (curIndex_e == P_RESET_SETTINGS)
           {
-            setDialogText(LABEL_SETTINGS_RESET, LABEL_SETTINGS_RESET_INFO, LABEL_CONFIRM, LABEL_CANCEL);
-            showDialog(DIALOG_TYPE_ALERT, resetEepromSettings, NULL, NULL);
+            popupDialog(DIALOG_TYPE_ALERT, LABEL_SETTINGS_RESET, LABEL_SETTINGS_RESET_INFO, LABEL_CONFIRM, LABEL_CANCEL, resetEepromSettings, NULL, NULL);
             break;
           }
           else if (curIndex_e == P_RESTORE_SETTINGS)
           {
-            setDialogText(LABEL_SETTINGS_RESTORE, LABEL_EEPROM_RESTORE_INFO, LABEL_CONFIRM, LABEL_CANCEL);
-            showDialog(DIALOG_TYPE_ALERT, restoreEepromSettings, NULL, NULL);
+            popupDialog(DIALOG_TYPE_ALERT, LABEL_SETTINGS_RESTORE, LABEL_EEPROM_RESTORE_INFO, LABEL_CONFIRM, LABEL_CANCEL, restoreEepromSettings, NULL, NULL);
             break;
           }
         }

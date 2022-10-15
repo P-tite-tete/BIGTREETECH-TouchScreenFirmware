@@ -58,15 +58,13 @@ float coordinateGetAxisTarget(AXIS axis)
 
 void coordinateSetAxisTarget(AXIS axis, float position)
 {
-  bool r = (axis == E_AXIS) ? (relative_e || relative_mode) : relative_mode;
-
-  if (r == false)
+  if ((axis == E_AXIS) ? relative_e : relative_mode)
   {
-    targetPosition.axis[axis] = position;
+    targetPosition.axis[axis] += position;
   }
   else
   {
-    targetPosition.axis[axis] += position;
+    targetPosition.axis[axis] = position;
   }
 }
 
@@ -103,6 +101,11 @@ float coordinateGetAxisActual(AXIS axis)
 void coordinateSetAxisActual(AXIS axis, float position)
 {
   curPosition.axis[axis] = position;
+}
+
+void coordinateGetAllActual(COORDINATE *tmp)
+{
+  memcpy(tmp, &curPosition, sizeof(curPosition));
 }
 
 void coordinateQuerySetWait(bool wait)
@@ -142,5 +145,16 @@ void coordinateQueryTurnOff(void)
   coordinateQueryWait = false;
 
   if (infoMachineSettings.autoReportPos == 1)  // if auto report is enabled, turn it off
+  {
     storeCmd("M154 S0\n");
+    curQuerySeconds = 0;
+  }
+}
+
+float coordinateGetAxis(AXIS axis)
+{
+  if (infoFile.source >= FS_ONBOARD_MEDIA)
+    return coordinateGetAxisActual(axis);
+  else
+    return coordinateGetAxisTarget(axis);
 }

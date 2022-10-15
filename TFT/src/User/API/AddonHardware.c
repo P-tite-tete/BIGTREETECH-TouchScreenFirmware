@@ -86,20 +86,13 @@ void FIL_SFS_SetAlive(bool alive)
 bool FIL_NormalRunoutDetect(void)
 {
   static bool runout = false;
-  static uint32_t highCount = 0;
-  static uint32_t lowCount = 0;
+  static int32_t trigBalance = 0;
   static uint32_t nextRunoutTime = 0;
 
   if (OS_GetTimeMs() > nextRunoutTime)
   {
-    // Detect HIGH/LOW level, Suitable for general mechanical / photoelectric switches
-    if (GET_BIT(infoSettings.runout, RUNOUT_INVERTED) == 0)  // if filament runout is triggered by a LOW signal
-      runout = lowCount > highCount ? true : false;
-    else  // if filament runout is triggered by a HIGH signal
-      runout = highCount > lowCount ? true : false;
-
-    highCount = 0;
-    lowCount = 0;
+    runout = (trigBalance > 0);
+    trigBalance = 0;
     nextRunoutTime = OS_GetTimeMs() + infoSettings.runout_noise;
   }
   else
@@ -143,14 +136,7 @@ bool FIL_NormalRunoutDetect(void)
         break;
     }
 
-    if (pinState)
-    {
-      highCount++;
-    }
-    else
-    {
-      lowCount++;
-    }
+    trigBalance += (pinState == GET_BIT(infoSettings.runout, RUNOUT_INVERTED)) ? 1: -1;  // if triggered add 1 else substract 1
   }
 
   return runout;
@@ -253,8 +239,7 @@ void FIL_FE_CheckRunout(void)
   if (printPause(true, PAUSE_NORMAL) && !getRunoutAlarm())  // If not printing, printPause() function will always fail
   {                                                         // so no useless error message is displayed
     setRunoutAlarmTrue();
-    setDialogText(LABEL_WARNING, LABEL_FILAMENT_RUNOUT, LABEL_CONFIRM, LABEL_NULL);
-    showDialog(DIALOG_TYPE_ALERT, setRunoutAlarmFalse, NULL, NULL);
+    popupDialog(DIALOG_TYPE_ALERT, LABEL_WARNING, LABEL_FILAMENT_RUNOUT, LABEL_CONFIRM, LABEL_NULL, setRunoutAlarmFalse, NULL, NULL);
   }
 
   if ((OS_GetTimeMs() > nextReminderTime) && (getRunoutAlarm() == true))

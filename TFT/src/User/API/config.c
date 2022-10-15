@@ -122,6 +122,7 @@ bool getLangFromFile(char * rootDir)
 
   if (foundkeys != LABEL_NUM)
   {
+    showError(CSTAT_FILE_INVALID);
     success = false;
   }
   else
@@ -659,6 +660,10 @@ void parseConfigKey(uint16_t index)
 
     case C_INDEX_NOTIFICATION_M117:
       infoSettings.notification_m117 = getOnOff();
+      break;
+
+    case C_INDEX_PROG_SOURCE:
+      SET_VALID_INT_VALUE(infoSettings.prog_source, 0, 1);
       break;
 
     case C_INDEX_PROG_DISP_TYPE:

@@ -10,12 +10,11 @@ static uint8_t itemSpeed_index = 1;
 // set the hotend to the minimum extrusion temperature if user selected "OK"
 void extrusionMinTemp_OK(void)
 {
-  heatSetTargetTemp(curExtruder_index, infoSettings.min_ext_temp);
+  heatSetTargetTemp(curExtruder_index, infoSettings.min_ext_temp, FROM_GUI);
 }
 
 void menuExtrude(void)
 {
-  // 1 title, ITEM_PER_PAGE items (icon + label)
   MENUITEMS extrudeItems = {
     // title
     LABEL_EXTRUDE,
@@ -40,13 +39,13 @@ void menuExtrude(void)
   {
     loopProcessToCondition(&isNotEmptyCmdQueue);  // wait for the communication to be clean
 
-    eAxisBackup.coordinate = ((infoFile.source >= BOARD_MEDIA) ? coordinateGetAxisActual(E_AXIS) : coordinateGetAxisTarget(E_AXIS));
+    eAxisBackup.coordinate = coordinateGetAxis(E_AXIS);
     eAxisBackup.feedrate = coordinateGetFeedRate();
     eAxisBackup.relative = eGetRelative();
     eAxisBackup.handled = true;
   }
 
-  extrKnownCoord = extrNewCoord = ((infoFile.source >= BOARD_MEDIA) ? coordinateGetAxisActual(E_AXIS) : coordinateGetAxisTarget(E_AXIS));
+  extrKnownCoord = extrNewCoord = coordinateGetAxis(E_AXIS);
 
   if (eAxisBackup.relative) // Set extruder to absolute
     mustStoreCmd("M82\n");

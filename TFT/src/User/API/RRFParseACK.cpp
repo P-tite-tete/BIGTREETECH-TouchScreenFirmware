@@ -19,6 +19,7 @@
  *    "fanPercent": [ 0, 100, 0, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1 ],
  *    "fanRPM": [ -1, -1, -1 ],
  *    "homed": [ 0, 0, 0 ],
+ *    "fraction_printed": 0,
  *    "msgBox.mode": -1
  *  }
  *
@@ -122,11 +123,11 @@ void ParseACKJsonParser::value(const char *value)
     case active:
       if (index == 0)
       {
-        heatSyncTargetTemp(BED, strtod((char *)value, NULL) + 0.5f);
+        heatSetTargetTemp(BED, strtod((char *)value, NULL) + 0.5f, FROM_HOST);
       }
       else if (index <= INVALID_HEATER)
       {
-        heatSyncTargetTemp(index - 1, strtod((char *)value, NULL) + 0.5f);
+        heatSetTargetTemp(index - 1, strtod((char *)value, NULL) + 0.5f, FROM_HOST);
       }
       break;
     case standby:
@@ -136,11 +137,11 @@ void ParseACKJsonParser::value(const char *value)
       {
         if (index == 0)
         {
-          heatSetTargetTemp(BED, 0);
+          heatSetTargetTemp(BED, 0, FROM_HOST);
         }
         else if (index <= INVALID_HEATER)
         {
-          heatSetTargetTemp(index - 1, 0);
+          heatSetTargetTemp(index - 1, 0, FROM_HOST);
         }
       }
       break;
@@ -171,6 +172,12 @@ void ParseACKJsonParser::value(const char *value)
       break;
     case fanRPM:
       break;
+    case fraction_printed:
+      if (getPrintProgressSource() < PROG_RRF)
+        setPrintProgressSource(PROG_RRF);
+      if (getPrintProgressSource() == PROG_RRF)
+        setPrintProgressPercentage((value[0] - '0') * 100 + (value[2] - '0') * 10 + (value[3] - '0'));
+      break;
     case mbox_seq:
       seq = strtod((char *)value, NULL);
       show_m291 = seq != m291_seq;
@@ -188,7 +195,7 @@ void ParseACKJsonParser::value(const char *value)
       strcpy(m291_title, value);
       break;
     case mbox_timeo:
-      m291_timeo = strtod((char *)value, NULL) * 1000;
+      m291_timeo = SEC_TO_MS(strtod((char *)value, NULL));
       break;
     case resp:
       if (strstr(value, (char *)"Steps/"))       //parse M92
@@ -220,15 +227,15 @@ void ParseACKJsonParser::value(const char *value)
       else if ((string_start = strstr(value, (char *)"printing byte")) != NULL)       // parse M27  {"seq":21,"resp":"SD printing byte 1226/5040433\n"}
       {
         string_end = strstr(string_start, (char *)"/");
-        setPrintProgress(atoi(string_start + 14), atoi(string_end + 1));
+        setPrintProgressData(atoi(string_start + 14), atoi(string_end + 1));
       }
       else if (strstr(value, (char *)"Auto tuning heater") && strstr(value, (char *)"completed"))
       {
-        pidUpdateStatus(true);
+        pidUpdateStatus(PID_SUCCESS);
       }
       else if (strstr(value, (char *)"Error: M303") || (strstr(value, (char *)"Auto tune of heater") && strstr(value, (char *)"failed")))
       {
-        pidUpdateStatus(false);
+        pidUpdateStatus(PID_FAILED);
       }
 
       break;

@@ -62,10 +62,8 @@ void windowReDrawButton(uint8_t position, uint8_t pressed)
 void popupDrawPage(DIALOG_TYPE type, BUTTON * btn, const uint8_t * title, const uint8_t * context, const uint8_t * yes,
                    const uint8_t * no)
 {
-  setMenuType(MENU_TYPE_DIALOG);
-
-  if (btn != NULL)  // set the following global variables only if buttons must be provided.
-  {                 // Otherwise, leave these variables unchanged so current values are maintained
+  if (btn != NULL)
+  {
     buttonNum = 0;
     windowButton = btn;
 
@@ -77,24 +75,27 @@ void popupDrawPage(DIALOG_TYPE type, BUTTON * btn, const uint8_t * title, const 
     {
       windowButton[buttonNum++].context = no;
     }
+
+    // draw a window with buttons bar
+    GUI_DrawWindow(&window, title, context, true);
+    for (uint8_t i = 0; i < buttonNum; i++) GUI_DrawButton(&windowButton[i], 0);
+
+    setMenuType(MENU_TYPE_DIALOG);
+  }
+  else
+  { // draw a window with no buttons bar
+    GUI_DrawWindow(&window, title, context, false);
+
+    setMenuType(MENU_TYPE_SPLASH);
   }
 
   TSC_ReDrawIcon = windowReDrawButton;
   window.type = type;
-
-  if (btn != NULL)  // draw a window with buttons bar
-  {
-    GUI_DrawWindow(&window, title, context, true);
-    for (uint8_t i = 0; i < buttonNum; i++) GUI_DrawButton(&windowButton[i], 0);
-  }
-  else  // draw a window with no buttons bar
-  {
-    GUI_DrawWindow(&window, title, context, false);
-  }
 }
 
 void menuDialog(void)
 {
+  menuSetTitle(NULL);
   while (MENU_IS(menuDialog))
   {
     uint16_t key_num = KEY_GetValue(buttonNum, cur_btn_rect);
@@ -189,9 +190,13 @@ void _setDialogCancelTextLabel(int16_t index)
   popup_strcpy(popup_cancel, tempstr, sizeof(popup_cancel));
 }
 
-/** Show save setting dialog. Set dialog text before calling showDialog
- * @param ok_action - pointer to a function to perform if ok is pressed. (pass NULL if no action need to be performed)
- * @param cancel_action - pointer to a function to perform if Cancel is pressed.(pass NULL if no action need to be performed)
+/**
+ * @brief Show a popup with a message. Set dialog text before calling showDialog
+ *
+ * @param type the type of the dialog (alert, question, error, etc)
+ * @param ok_action pointer to a function to perform if ok is pressed. (pass NULL if no action need to be performed)
+ * @param cancel_action pointer to a function to perform if Cancel is pressed.(pass NULL if no action need to be performed)
+ * @param loop_action pointer to a function to perform whilst the dialog is active (visible/not answered)
 */
 void showDialog(DIALOG_TYPE type, void (*ok_action)(), void (*cancel_action)(), void (*loop_action)())
 {
@@ -208,6 +213,7 @@ void showDialog(DIALOG_TYPE type, void (*ok_action)(), void (*cancel_action)(), 
 
 void loopPopup(void)
 {
+  // display the last received popup message, overriding previous popup messages, if any
   if (popup_redraw == false)
     return;
 
@@ -215,13 +221,12 @@ void loopPopup(void)
 
   LCD_WAKE();
 
-  // display the last received popup message, overriding previous popup messages, if any
   if (popup_cancel[0])
   {
     popupDrawPage(popup_type, bottomDoubleBtn, popup_title, popup_msg, popup_ok, popup_cancel);
     cur_btn_rect = doubleBtnRect;
   }
-  else if (popup_ok[0])
+  else if (popup_ok[0])  // show only ok button
   {
     popupDrawPage(popup_type, &bottomSingleBtn, popup_title, popup_msg, popup_ok, NULL);
     cur_btn_rect = &singleBtnRect;
